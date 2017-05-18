@@ -1,10 +1,10 @@
 ﻿<Properties StartupItem="Assembly-CSharp.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Scripts/PlayerController.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Plugins/SimpleJSON.cs">
     <Files>
-      <File FileName="Assets/Scripts/PlayerController.cs" Line="156" Column="4" />
-      <File FileName="Assets/CleverTapUnity/CleverTapUnity-Scripts/CleverTapUnity.cs" Line="71" Column="67" />
-      <File FileName="Assets/Plugins/Android/AndroidManifest.xml" Line="57" Column="14" />
+      <File FileName="Assets/Scripts/PlayerController.cs" Line="78" Column="3" />
+      <File FileName="Assets/Plugins/SimpleJSON.cs" Line="162" Column="4" />
+      <File FileName="Assets/Plugins/GreendeckUnity.cs" Line="34" Column="77" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

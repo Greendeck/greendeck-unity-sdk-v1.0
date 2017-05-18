@@ -1,14 +1,28 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-
 using System;
+using SimpleJSON;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Runtime.InteropServices;
 using CleverTap;
 using CleverTap.Utilities;
+
+using GreendeckUnity;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Net;
+using System.Collections.Specialized;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Collections;
+using System.Collections.ObjectModel;
+using System.Net.Security;
 
 public class PlayerController : MonoBehaviour 
 {	
@@ -50,8 +64,9 @@ public class PlayerController : MonoBehaviour
 		CleverTapBinding.EnablePersonalization();
 		}
 		#endif
-	}
 
+	}
+		
 	void Start()
 	{
 		#if (UNITY_IPHONE && !UNITY_EDITOR)
@@ -67,10 +82,20 @@ public class PlayerController : MonoBehaviour
 		winText.text = "";
 		numberOfGameObjects =14;
 
-		ResetAxes ();
+		ResetAxes (); 
+
+		String CLIENT_ID = "514c89cf6dd8ff4770d0afcb697640c95ed40cef3527f98002f706952d8b7956";
+		String CLIENT_SECRET = "80944fa19ab375b910da940fe91a1ad2e4ca2b1cd6fed2dc31dcaebb4ffb5958";
+
+		String token = GreendeckUnityAPI.GetAccessToken(CLIENT_ID, CLIENT_SECRET);
+
+		print (token);
+
+		print (GreendeckUnityAPI.Track(token, "Start Game Greendeck"));
 
 		// record basic event with no properties
 		CleverTapBinding.RecordEvent("Start Game");
+
 
 
 	}
@@ -170,4 +195,8 @@ public class PlayerController : MonoBehaviour
 		zeroAc = Input.acceleration;
 		curAc = Vector3.zero;
 	}
+
+
+
 }
+

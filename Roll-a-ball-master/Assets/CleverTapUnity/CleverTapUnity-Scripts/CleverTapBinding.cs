@@ -283,6 +283,7 @@ namespace CleverTap {
     private static AndroidJavaObject unityActivity;
     private static AndroidJavaObject clevertap;
 	private static AndroidJavaObject CleverTapClass;
+	private static AndroidJavaObject NetworkManager;
   
     void Start() {
         Debug.Log("Start: CleverTap binding for Android.");

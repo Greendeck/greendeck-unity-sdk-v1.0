@@ -1,28 +1,19 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections;
-
-using System;
-using SimpleJSON;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Runtime.InteropServices;
-using CleverTap;
-using CleverTap.Utilities;
-
-using GreendeckUnity;
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Net;
 using System.Collections.Specialized;
-using System.IO;
 using System.Text.RegularExpressions;
-using System.Collections;
 using System.Collections.ObjectModel;
 using System.Net.Security;
+
+using SimpleJSON;
+using GreendeckUnity;
 
 public class PlayerController : MonoBehaviour 
 {	
@@ -31,8 +22,8 @@ public class PlayerController : MonoBehaviour
 	public GUIText winText;
 	private int count;
 	private int numberOfGameObjects;
-	Rigidbody rigidbody;
-
+	Rigidbody rb;
+	public static GreendeckUnityAPI gd;
 	public float speedAc;
 
 	//accelerometer
@@ -44,10 +35,7 @@ public class PlayerController : MonoBehaviour
 	private float GetAxisH = 0;
 	private float GetAxisV = 0;
 
-	public String CLEVERTAP_ACCOUNT_ID = "TEST-K76-W49-494Z";
-	public String CLEVERTAP_ACCOUNT_TOKEN = "TEST-c40-6a3";
-	public int CLEVERTAP_DEBUG_LEVEL = 0;
-	public bool CLEVERTAP_ENABLE_PERSONALIZATION = true;
+	
 
 	void Awake(){
 		#if (UNITY_IPHONE && !UNITY_EDITOR)
@@ -56,46 +44,25 @@ public class PlayerController : MonoBehaviour
 
 		DontDestroyOnLoad(gameObject);
 
-		#if (UNITY_ANDROID && !UNITY_EDITOR)
-		DontDestroyOnLoad(gameObject);
-		CleverTapBinding.SetDebugLevel(CLEVERTAP_DEBUG_LEVEL);
-		CleverTapBinding.Initialize(CLEVERTAP_ACCOUNT_ID, CLEVERTAP_ACCOUNT_TOKEN);
-		if (CLEVERTAP_ENABLE_PERSONALIZATION) {
-		CleverTapBinding.EnablePersonalization();
-		}
-		#endif
+		
 
 	}
 		
 	void Start()
 	{
-		#if (UNITY_IPHONE && !UNITY_EDITOR)
-		// register for push notifications
-		CleverTap.CleverTapBinding.RegisterPush();
-		// set to 0 to remove icon badge
-		CleverTap.CleverTapBinding.SetApplicationIconBadgeNumber(0);
-		#endif
-
+		
 		count = 0;
-		rigidbody = GetComponent<Rigidbody>();
+		rb = GetComponent<Rigidbody>();
 		SetCountText();
 		winText.text = "";
 		numberOfGameObjects =14;
 
 		ResetAxes (); 
 
-		String CLIENT_ID = "514c89cf6dd8ff4770d0afcb697640c95ed40cef3527f98002f706952d8b7956";
-		String CLIENT_SECRET = "80944fa19ab375b910da940fe91a1ad2e4ca2b1cd6fed2dc31dcaebb4ffb5958";
+		String CLIENT_ID = "72f8dd6fef58edcabfc4b0ed605131e0d7dda6361a353f2fd61be82f923f90c7";
+		String CLIENT_SECRET = "ed49bc06bfb8f33fff5179c0c792b37db4f780109f4a9d4ce4d9f9ec7ae909d0";
 
-		String token = GreendeckUnityAPI.GetAccessToken(CLIENT_ID, CLIENT_SECRET);
-
-		print (token);
-
-		print (GreendeckUnityAPI.Track(token, "Start Game Greendeck"));
-
-		// record basic event with no properties
-		CleverTapBinding.RecordEvent("Start Game");
-
+		gd = GreendeckUnityAPI.initialize (CLIENT_ID, CLIENT_SECRET);
 
 
 	}
@@ -127,7 +94,7 @@ public class PlayerController : MonoBehaviour
 		
 		Vector3 movement = new Vector3(moveHorizontal, 0.0f, moveVertical);
 		
-		rigidbody.AddForce (movement * speed * Time.deltaTime);
+		rb.AddForce (movement * speed * Time.deltaTime);
 		}else 
 		{
 			//get input by accelerometer
@@ -141,7 +108,7 @@ public class PlayerController : MonoBehaviour
 
 			Vector3 movement = new Vector3 (GetAxisH, 0.0f, GetAxisV);
 
-			rigidbody.AddForce(movement * speedAc);
+			rb.AddForce(movement * speedAc);
 
 		}
 	}
@@ -163,9 +130,8 @@ public class PlayerController : MonoBehaviour
 			// record event with properties
 			Dictionary<string, object> Props = new Dictionary<string, object> ();
 			Props.Add("Score", ""+count);
-			print ("dictionary addition done "+ count);
 
-			CleverTapBinding.RecordEvent("Collision", Props);
+			GreendeckUnityAPI.Track("Collission Triggered");
 
 			print ("event recorded"+ count);
 		}
@@ -175,15 +141,20 @@ public class PlayerController : MonoBehaviour
 	{
 		countText.text = "Count: " + count.ToString();
 
+		
+
 		print ("SetCountText"+ count);
 
+		if (count == 1) {
+
+			GreendeckUnityAPI.Identify("user3@gmail.com");
+
+		}
 		if (count >= 14) {
 
 			print ("true PlayerWins"+ count);
 			winText.text = "YOU WIN!";
 
-			// record basic event with no properties
-			//CleverTapBinding.RecordEvent("Player Wins");
 
 		} else {
 			print ("false PlayerWins"+ count);

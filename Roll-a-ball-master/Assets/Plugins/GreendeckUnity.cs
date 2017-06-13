@@ -26,6 +26,8 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Net.Security;
 
+
+
 namespace GreendeckUnity{
 
 	public class GreendeckPerson {
@@ -40,19 +42,20 @@ namespace GreendeckUnity{
 		}
 	}
 	
-	public static class GreendeckUnityAPI 
+	public class GreendeckUnityAPI 
 	{
 		private static GreendeckUnityAPI uniqueInstance;
 
 		static String accessTokenString; 
 		static String accessTokenJSON; 
 		static GreendeckPerson customer; 
-		String clientId; String clientSecret;
+		static String clientId; 
+		static String clientSecret;
 		private static GreendeckUnityAPI.FetchResponseListener listener;
 
 		// Assign the listener implementing events interface that will receive the events
-		public void setFetchResponseListener(GreendeckUnityAPI.FetchResponseListener l) {
-			this.listener = l;
+		public void SetFetchResponseListener(GreendeckUnityAPI.FetchResponseListener l) {
+			listener = l;
 		}
 	
 		public static String host = "http://greendeck-rails.herokuapp.com";
@@ -62,25 +65,51 @@ namespace GreendeckUnity{
 		public static String EventApiEndPoint = host+"/api/v1/events";
 		public static String FetchApiEndPoint = host+"/api/v1/fetch";
 
-		public GreendeckUnityAPI(){
-		}
+
 
 		public interface FetchResponseListener
 		{
 			// These methods are the different events and
 			// need to pass relevant arguments related to the event triggered
-			void onSuccess(JSONObject response);
+			void onSuccess(String response);
 			// or when data has been loaded
 			void onFailure(String error);
 		}
-
+		public GreendeckUnityAPI(){
+			
+		}
 		public GreendeckUnityAPI(String _clientId, String _clientSecret){
 			clientId = _clientId;
 			clientSecret = _clientSecret;
-			GetAccessToken(clientId, clientSecret, AuthEndPoint);
-		}
+
+			String accessTokenJSONLocal = PlayerPrefs.GetString ("access_token_json", null);
+
+			if (accessTokenJSONLocal.Equals (null) || accessTokenJSONLocal.Equals ("")) {
+			
+				GetAccessToken (clientId, clientSecret, AuthEndPoint);
+			} else {
+			
+				if (isTokenExpired (accessTokenJSONLocal)) {
+					GetAccessToken (clientId, clientSecret, AuthEndPoint);	
+				} else {
+				
+					accessTokenJSON = accessTokenJSONLocal;
+					Console.WriteLine("TOKEN received");
+
+					var N = JSON.Parse(accessTokenJSON);
+					String at = N["access_token"].Value; 
+					accessTokenString =  at;
+					PlayerPrefs.SetString("access_token_json", accessTokenJSON);
+					Console.WriteLine("TOKEN: "+ at);
+						
+
+					}
+					
+				}
+			}
 
 		public static GreendeckUnityAPI initialize(String _clientId, String _clientSecret) {
+		
 			if ((uniqueInstance == null)) {
 				try {
 					uniqueInstance = new GreendeckUnityAPI(_clientId, _clientSecret);
@@ -90,10 +119,9 @@ namespace GreendeckUnity{
 				}
 
 			}
-			else if (isTokenExpired(uniqueInstance.accessTokenJSON)) {
+			else if (isTokenExpired(accessTokenJSON)) {
 				uniqueInstance = new GreendeckUnityAPI(_clientId, _clientSecret);
 			}
-
 			return uniqueInstance;
 		}
 
@@ -103,12 +131,12 @@ namespace GreendeckUnity{
 
 			var N = JSON.Parse(accessToken);
 
-			long expiresIn = N["expires_in"].Value; 
+			long expiresIn = (long) N["expires_in"].AsDouble; 
 			Console.WriteLine("expires_in: " + expiresIn);
-			long createdAt = N["created_at"].Value; 
+			long createdAt = (long) N["created_at"].AsDouble; 
 			Console.WriteLine("created at: " + createdAt);
 
-			long currentTime = Time.time;
+			long currentTime = (long) DateTime.Now.Millisecond/1000;
 
 			Console.WriteLine("current: " + currentTime);
 			return ((createdAt + expiresIn) 
@@ -145,32 +173,40 @@ namespace GreendeckUnity{
 						var N = JSON.Parse(response);
 						String at = N["access_token"].Value; 
 						accessTokenString =  at;
+						PlayerPrefs.SetString("access_token_json", response);
 						Console.WriteLine("TOKEN: "+ at);
 					}
 
 				}
 				else{
 					Console.WriteLine("TOKEN response not received");
-					return "";
+
 				}
 
 			}   
 			catch (WebException e)   
 			{  
-				return "";
+				
 				Console.WriteLine ("TOKEN error on receiving");
 			}  
 		}
 
 		public static void Identify(){
+
+			String personCode = PlayerPrefs.GetString ("person_code", null);
+
+			if (personCode == null || personCode.Equals ("")) {
 			
-			String guestCode = "guest" + UnityEngine.Random.Range (1, 100000000);
-			Identify(guestCode);
+				String guestCode = "guest" + UnityEngine.Random.Range (1, 100000000);
+				Identify(guestCode);
+			}
+
+
 		}
 		public static void Identify(String identifier){
 			Identify (identifier);
 		}
-		public static void Identify(String identifier, Dictionary<String, object> properties){
+		public static void Identify(String identifier, Dictionary<String, String> properties){
 			Dictionary<String, String> headers = new Dictionary<String, String>();
 			headers.Add("Authorization","Bearer "+accessTokenString);
 
@@ -187,6 +223,7 @@ namespace GreendeckUnity{
 				GreendeckPerson c = new GreendeckPerson ();
 				c.SetPersonCode (personCode);
 				customer = c;
+				PlayerPrefs.SetString ("person_code", personCode);
 				Console.WriteLine ("CUSTOMER with identifier: "+identifier+" found");
 			}
 			else{
@@ -198,11 +235,11 @@ namespace GreendeckUnity{
 
 		}
 		public static void CreateCustomer(String identifier){
-		
+
 			CreateCustomer (identifier, null);
 
 		}
-		public static void CreateCustomer(String identifier, Dictionary<String, object> properties){
+		public static void CreateCustomer(String identifier, Dictionary<String, String> properties){
 			Dictionary<String, String> headers = new Dictionary<String, String>();
 			headers.Add("Authorization","Bearer "+accessTokenString);
 
@@ -224,6 +261,7 @@ namespace GreendeckUnity{
 				GreendeckPerson c = new GreendeckPerson ();
 				c.SetPersonCode (personCode);
 				customer = c;
+				PlayerPrefs.SetString ("person_code", personCode);
 				Console.WriteLine ("CUSTOMER created");
 			}
 			else{
@@ -237,10 +275,10 @@ namespace GreendeckUnity{
 		public static void TrackWithoutCustomer(String eventName){
 			TrackWithoutCustomer (eventName, null, null);
 		}
-		public static void TrackWithoutCustomer(String eventName, Dictionary<String, object> properties){
+		public static void TrackWithoutCustomer(String eventName, Dictionary<String, String> properties){
 			TrackWithoutCustomer (eventName, properties, null);
 		}
-		public static void TrackWithoutCustomer(String eventName, Dictionary<String, object> properties, String productCode){
+		public static void TrackWithoutCustomer(String eventName, Dictionary<String, String> properties, String productCode){
 			Dictionary<String, String> headers = new Dictionary<String, String>();
 			headers.Add("Authorization","Bearer "+accessTokenString);
 
@@ -260,10 +298,10 @@ namespace GreendeckUnity{
 		public static void Track(String eventName){
 			TrackWithoutCustomer (eventName, null, null);
 		}
-		public static void Track(String eventName, Dictionary<String, object> properties){
+		public static void Track(String eventName, Dictionary<String, String> properties){
 			TrackWithoutCustomer (eventName, properties, null);
 		}
-		public static void Track(String eventName, Dictionary<String, object> properties, String productCode){
+		public static void Track(String eventName, Dictionary<String, String> properties, String productCode){
 			Dictionary<String, String> headers = new Dictionary<String, String>();
 			headers.Add("Authorization","Bearer "+accessTokenString);
 
@@ -271,7 +309,7 @@ namespace GreendeckUnity{
 			String personCode = "";
 			if (customer!=null) {
 				
-				personCode = customer.GetPersonCode;
+				personCode = customer.GetPersonCode();
 			}
 			else{
 				TrackWithoutCustomer(eventName, properties, productCode);
@@ -292,7 +330,7 @@ namespace GreendeckUnity{
 		public static void Transact(String transactionCode, float quantity, float price, String productCode){
 			Transact (transactionCode, quantity, price, productCode, null);
 		}
-		public static void Transact(String transactionCode, float quantity, float price, String productCode, Dictionary<String, object> properties){
+		public static void Transact(String transactionCode, float quantity, float price, String productCode, Dictionary<String, String> properties){
 			Dictionary<String, String> headers = new Dictionary<String, String>();
 			headers.Add("Authorization","Bearer "+accessTokenString);
 
@@ -300,15 +338,16 @@ namespace GreendeckUnity{
 			String personCode = "";
 			if (customer!=null) {
 
-				personCode = customer.GetPersonCode;
+				personCode = customer.GetPersonCode();
 
 
 				JSONObject propertiesJSONObject = new JSONObject();
 				if (properties != null) {
-					foreach(KeyValuePair<string, object> entry in properties){
+					foreach(KeyValuePair<String, String> entry in properties){
 
 						String key = ""+entry.Key;
-						var value = entry.Value;
+						String value = entry.Value;
+
 
 
 						try {
@@ -377,7 +416,7 @@ namespace GreendeckUnity{
 			String personCode = "";
 			if (customer!=null) {
 
-				personCode = customer.GetPersonCode;
+				personCode = customer.GetPersonCode();
 
 				if(productCode!=null && !productCode.Equals("")){
 					String encPersonCode = personCode;
@@ -389,7 +428,7 @@ namespace GreendeckUnity{
 
 					}
 
-					String response = getWithListenerHTTP (Url+"/"+encPersonCode+"/product/"+encProductCode, headers);
+					getWithListenerHTTP (Url+"/"+encPersonCode+"/product/"+encProductCode, headers);
 
 				}
 				else{
@@ -420,7 +459,7 @@ namespace GreendeckUnity{
 
 		}
 
-		public static JSONObject GetCustomerJSONObject(String identifier, Dictionary<String, object> dictionary){
+		public static JSONObject GetCustomerJSONObject(String identifier, Dictionary<String, String> dictionary){
 
 			JSONObject customer = new JSONObject();
 			JSONObject customerToSend = new JSONObject();
@@ -428,14 +467,13 @@ namespace GreendeckUnity{
 				customer.Add("person_code", identifier);
 
 				JSONObject properties = new JSONObject();
-				foreach(KeyValuePair<string, object> entry in dictionary){
+				foreach(KeyValuePair<String, String> entry in dictionary){
 
-					String key = ""+entry.Key;
-					var value = entry.Value;
+
 
 
 					try {
-						properties.Add(key, value);
+						properties.Add(entry.Key, entry.Value);
 					} catch (Exception e) {
 						
 					}
@@ -479,7 +517,7 @@ namespace GreendeckUnity{
 
 		}
 
-		public static JSONObject GetEventJSONObject(String eventName, String personCode, String productCode, Dictionary<String, object> dictionary){
+		public static JSONObject GetEventJSONObject(String eventName, String personCode, String productCode, Dictionary<String, String> dictionary){
 
 
 			JSONObject eventJSON = new JSONObject();
@@ -501,14 +539,10 @@ namespace GreendeckUnity{
 				}
 
 				JSONObject properties = new JSONObject();
-				foreach(KeyValuePair<string, object> entry in dictionary){
-
-					String key = ""+entry.Key;
-					var value = entry.Value;
-
+				foreach(KeyValuePair<String, String> entry in dictionary){
 
 					try {
-						properties.Add(key, value);
+						properties.Add(entry.Key, entry.Value);
 					} catch (Exception e) {
 
 					}

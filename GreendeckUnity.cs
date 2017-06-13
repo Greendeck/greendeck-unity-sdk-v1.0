@@ -58,7 +58,7 @@ namespace GreendeckUnity{
 			listener = l;
 		}
 	
-		public static String host = "http://greendeck-rails.herokuapp.com";
+		public static String host = "http://greendeck-staging.herokuapp.com";
 		public static String AuthEndPoint = host+"/api/v1/oauth/token.json";
 		public static String TransactionEndPoint = host+"/api/v1/transactions";
 		public static String CustomerApiEndPoint = host+"/api/v1/people";
